@@ -17,6 +17,7 @@ A Laravel + Inertia + Vue + TypeScript + Tailwind implementation for redesigning
 
 - `resources/js/Pages/Welcome.vue` - redesigned sales page
 - `resources/js/Pages/AiStudio.vue` - AI model generation workspace mockup
+- `vercel-site/src/App.vue` - Vercel-deployable static sales page version
 - `extension-prototype/src/App.tsx` - React + Tailwind Premiere/DaVinci extension mockup
 - `routes/web.php` - Inertia entry route
 - `config/scout.php` - Typesense-ready Scout config
@@ -54,6 +55,26 @@ AI Studio mockup:
 
 ```text
 http://127.0.0.1:8000/ai-studio
+```
+
+## Vercel Deployment
+
+Deploy `vercel-site` when you need a Vercel URL that looks like the sales page.
+
+```bash
+cd vercel-site
+npm install
+npm run build
+```
+
+Vercel settings:
+
+```text
+Root Directory: vercel-site
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
 ```
 
 ## Editor Extension Prototype
