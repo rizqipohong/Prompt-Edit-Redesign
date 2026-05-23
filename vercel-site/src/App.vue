@@ -20,6 +20,43 @@ import {
 import { ref } from 'vue';
 
 const mobileMenuOpen = ref(false);
+const chipScroller = ref<HTMLElement | null>(null);
+const isDraggingChips = ref(false);
+const chipDragStartX = ref(0);
+const chipDragStartScroll = ref(0);
+
+function startChipDrag(event: PointerEvent) {
+  const scroller = chipScroller.value;
+
+  if (!scroller) {
+    return;
+  }
+
+  isDraggingChips.value = true;
+  chipDragStartX.value = event.clientX;
+  chipDragStartScroll.value = scroller.scrollLeft;
+  scroller.setPointerCapture(event.pointerId);
+}
+
+function moveChipDrag(event: PointerEvent) {
+  const scroller = chipScroller.value;
+
+  if (!scroller || !isDraggingChips.value) {
+    return;
+  }
+
+  scroller.scrollLeft = chipDragStartScroll.value - (event.clientX - chipDragStartX.value);
+}
+
+function stopChipDrag(event: PointerEvent) {
+  const scroller = chipScroller.value;
+
+  if (scroller?.hasPointerCapture(event.pointerId)) {
+    scroller.releasePointerCapture(event.pointerId);
+  }
+
+  isDraggingChips.value = false;
+}
 
 const assets = {
   logo: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/8228/images/4e61418-f758-6236-4be3-4eb4f0221be_Prompt_Edit_Logo_Black_Background_.png',
@@ -35,6 +72,7 @@ const assets = {
   sfx: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159239506/settings_images/a034f08-b326-36ed-f6fe-50306155df3_CCT_SFX_software_boxes-min.png',
   titles: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159239506/settings_images/ff6f173-68b-106-a30a-85f15cee8eaf_CCT_TITLE_software_boxes-min.png',
   overlays: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159239506/settings_images/a8bdaf0-73a-aea-7e84-4528311ad72_CCT_OVERLAY_software_boxes-min.png',
+  backgrounds: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159239506/settings_images/737a72c-014a-2bd-2116-fd8dfffb43_CCT_BACKGROUND_software_boxes-min.png',
   guarantee: 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159239506/settings_images/1f0177c-fcd5-a400-d321-00c6f66532_wQYLmC5ETUStuMB0TZ5X_eLWaGR9tRXaCrbFrZLsu_Satisfaction_Guarantee.png',
 };
 
@@ -60,6 +98,7 @@ const categories = [
     title: 'Image Studio',
     kicker: 'Nano Banana Pro, Ideogram, GPT Image',
     description: 'Generate thumbnails, ad creative, product scenes, clones, and social visuals without leaving one workspace.',
+    useCases: ['AI clones', 'Social media posts', 'Graphic design', 'Image editing', 'YouTube thumbnails', 'Online ads'],
     image: assets.imageTools,
     icon: Image,
     accent: 'from-lime-300/90 to-emerald-400/80',
@@ -68,6 +107,7 @@ const categories = [
     title: 'Video Studio',
     kicker: 'Veo, Kling, Seedance',
     description: 'Move from prompt to cinematic shots, UGC hooks, reels, short-form ads, and visual effects with pay-as-you-go credits.',
+    useCases: ['Clone videos', 'Visual effects', 'Cinematic films', 'Video ads', 'Reels and TikToks', 'YouTube videos'],
     image: assets.videoTools,
     icon: Video,
     accent: 'from-cyan-300/90 to-blue-500/80',
@@ -76,6 +116,7 @@ const categories = [
     title: 'Audio Lab',
     kicker: 'ElevenLabs, Suno, voiceover tools',
     description: 'Create voiceovers, clone voices, swap audio, generate music beds, and produce sound effects for creator videos.',
+    useCases: ['AI voiceovers', 'Voice clones', 'Voice swaps', 'AI sound effects', 'AI music generation'],
     image: assets.audioTools,
     icon: Music,
     accent: 'from-amber-300/90 to-orange-500/80',
@@ -84,10 +125,18 @@ const categories = [
     title: 'Editing Plugins',
     kicker: 'Premiere Pro and DaVinci Resolve',
     description: 'Bring generation tools inside the editor so creators can create, preview, and drop assets straight into projects.',
+    useCases: ['Generate inside editing software', 'Avoid browser tab switching', 'Add creations to projects', 'Keep timeline work moving'],
     image: assets.pluginTools,
     icon: Wand2,
     accent: 'from-fuchsia-300/90 to-rose-500/80',
   },
+];
+
+const courseIntroPoints = [
+  'Built for AI Creator Course students who need one place to access the tools they are learning.',
+  'Avoid opening accounts across every model website and paying for overlapping monthly plans.',
+  'Use credits like project fuel: test tools, generate assets, and only buy more when the next project needs it.',
+  'Start with a discounted credit bundle, then choose the monthly plan only if the template library and extra savings make sense.',
 ];
 
 const workflows = [
@@ -141,21 +190,112 @@ const templatePacks = [
   { title: '60,000+ SFX', image: assets.sfx, description: 'Professional sound effects organized for quick search and drag-and-drop edits.' },
   { title: '3,000+ Titles', image: assets.titles, description: 'Ready-made text animations for Reels, Shorts, ads, and YouTube edits.' },
   { title: '2,000+ Overlays', image: assets.overlays, description: 'Visual textures, effects, and scene polish for social-first videos.' },
+  { title: '5,000+ Backgrounds', image: assets.backgrounds, description: 'Animated and static backgrounds for polished layouts, titles, product shots, and quick social edits.' },
+];
+
+const templateDeepDives = [
+  {
+    title: 'LUTs for cinematic color',
+    body: 'Color grading presets help ordinary footage take on a more professional look quickly, even when the creator does not want to build a grade from scratch.',
+  },
+  {
+    title: 'Sound effects with searchable categories',
+    body: 'SFX packs are organized so creators can quickly find whooshes, hits, ambience, transitions, risers, and practical sounds that make edits feel finished.',
+  },
+  {
+    title: 'Text and title templates',
+    body: 'Drag, drop, customize, and publish. The library gives editors ready-made motion text for Reels, Shorts, YouTube, ads, and course content.',
+  },
+  {
+    title: 'Overlays for style and texture',
+    body: 'Creators can add film texture, social-style effects, light leaks, glitches, vintage looks, and visual polish without rebuilding effects manually.',
+  },
+  {
+    title: 'Backgrounds for clean layouts',
+    body: 'Background packs give creators a strong base layer for titles, product shots, talking-head videos, and quick branded social edits.',
+  },
+];
+
+const testimonials = [
+  {
+    quote: 'My daughter and I got more editing work done today in 3 hours than we normally do in 3 days.',
+    name: 'Hilda Schlueter',
+    role: 'Online course creator',
+  },
+  {
+    quote: "My videos would not look half as good without the Content Creator Templates Library.",
+    name: 'Matt Lilley',
+    role: 'ContentCreator.com student',
+  },
+  {
+    quote: 'I do not need another digital asset subscription. This is the resource I keep coming back to.',
+    name: 'Brady Hales',
+    role: 'ContentCreator.com student',
+  },
+];
+
+const subscriptionFit = [
+  'You want one easy interface for the best AI tools instead of a stack of separate subscriptions.',
+  'You want the best credit deal so you can create more while spending less.',
+  'You want cinematic videos using templates similar to what working editors use to move faster.',
+  'You are early in editing but still want polished results without months of setup.',
+  'You are tired of hunting for single assets online and being forced into expensive asset packs.',
+];
+
+const unlimitedBenefits = [
+  'Unlimited downloads from the template library while your subscription is active.',
+  'Unlimited usage for videos and projects created during your active membership.',
+  'Royalty-free assets for social media and commercial video work.',
+  'Templates that work with major editing platforms, with some packs made for specific editors.',
 ];
 
 const faqs = [
   {
     question: 'What is Prompt Edit?',
-    answer: 'Prompt Edit is an AI marketplace where creators can access image, video, audio, and editing tools from one account using credits.',
+    answer: 'Prompt Edit is an AI marketplace where creators access image, video, audio, and editing tools from one account. Instead of subscribing to every tool separately, creators spend credits only when they generate.',
   },
   {
     question: 'Do I need a subscription?',
     answer: 'No. Credits let you pay as you go. The monthly plan is optional for creators who want more credits, discounts, and the template library.',
   },
   {
+    question: 'Can I use the output commercially?',
+    answer: 'Yes. Creations and template downloads used during an active membership are positioned for social and commercial video projects without extra commercial licensing fees.',
+  },
+  {
+    question: 'Is the quality different from using the model company directly?',
+    answer: 'The offer explains that Prompt Edit provides access to the same kind of AI tools on a pay-per-use basis, so creators are choosing a different payment and workflow model rather than lower-quality output.',
+  },
+  {
+    question: 'What is the Content Creator Templates Library?',
+    answer: 'It is a library of 100,000+ royalty-free editing templates and packs, including LUTs, titles, visual effects, presets, project templates, animations, sound effects, motion backgrounds, and more.',
+  },
+  {
+    question: 'Are there download limits?',
+    answer: 'The subscription is positioned with unlimited downloads for the template library while membership is active, subject to individual account usage and the platform terms.',
+  },
+  {
+    question: 'Will the templates work with my editing software?',
+    answer: 'The templates are described as compatible with major editing platforms, with some custom packs built for specific editing software.',
+  },
+  {
+    question: 'Can I cancel anytime?',
+    answer: 'Yes. The monthly plan is positioned as cancellable without a long-term contract.',
+  },
+  {
+    question: 'What happens to templates after canceling?',
+    answer: 'Videos created during the active membership remain cleared, while future use of the template library requires an active subscription.',
+  },
+  {
     question: 'Does this replace editing software?',
     answer: 'No. Prompt Edit helps generate creative assets and includes plugins that support workflows inside Premiere Pro and DaVinci Resolve.',
   },
+];
+
+const legalNotes = [
+  'AI credits that have already been spent are treated like used project fuel and are not refundable.',
+  'The page should link to terms, privacy policy, and earnings disclaimer in production.',
+  'Results shown in educational or sales materials are examples and should not be presented as typical guaranteed outcomes.',
 ];
 </script>
 
@@ -329,10 +469,44 @@ const faqs = [
     </section>
 
     <section class="border-y border-white/10 bg-[#0a0a0a] py-5">
-      <div class="mx-auto flex max-w-7xl gap-3 overflow-x-auto px-4 sm:px-6 lg:px-8">
+      <div
+        ref="chipScroller"
+        :class="[
+          'mx-auto flex max-w-7xl touch-pan-y select-none gap-3 overflow-x-auto px-4 sm:px-6 lg:px-8',
+          '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          isDraggingChips ? 'cursor-grabbing' : 'cursor-grab',
+        ]"
+        @dragstart.prevent
+        @pointerdown="startChipDrag"
+        @pointermove="moveChipDrag"
+        @pointerup="stopChipDrag"
+        @pointercancel="stopChipDrag"
+        @pointerleave="stopChipDrag"
+      >
         <span v-for="chip in modelChips" :key="chip" class="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-zinc-300">
           {{ chip }}
         </span>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div class="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.22em] text-lime-300">Exclusive course offer</p>
+          <h2 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-5xl">
+            The same offer flow, redesigned into a product-first sales page.
+          </h2>
+          <p class="mt-5 text-base leading-7 text-zinc-400">
+            The original page speaks to students who just joined the AI Creator Course and need a practical place to use the tools they are learning. This redesign keeps that intent and makes the value faster to scan.
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <article v-for="point in courseIntroPoints" :key="point" class="rounded-lg border border-white/10 bg-zinc-950 p-5">
+            <BadgeCheck class="size-5 text-lime-300" aria-hidden="true" />
+            <p class="mt-4 text-sm leading-6 text-zinc-300">{{ point }}</p>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -362,6 +536,15 @@ const faqs = [
             </div>
             <h3 class="text-2xl font-semibold text-white">{{ category.title }}</h3>
             <p class="mt-3 text-sm leading-6 text-zinc-400">{{ category.description }}</p>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <span
+                v-for="useCase in category.useCases"
+                :key="useCase"
+                class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-zinc-300"
+              >
+                {{ useCase }}
+              </span>
+            </div>
           </div>
         </article>
       </div>
@@ -384,6 +567,15 @@ const faqs = [
               <h3 class="mt-5 text-xl font-semibold">{{ workflow.title }}</h3>
               <p class="mt-3 text-sm leading-6 text-zinc-600">{{ workflow.body }}</p>
             </article>
+          </div>
+        </div>
+
+        <div class="mt-12 grid gap-4 lg:grid-cols-2">
+          <div class="overflow-hidden rounded-lg border border-zinc-200 bg-black">
+            <img :src="assets.before" alt="Before Prompt Edit creative workflow" class="h-full min-h-80 w-full object-cover opacity-90" />
+          </div>
+          <div class="overflow-hidden rounded-lg border border-zinc-200 bg-black">
+            <img :src="assets.after" alt="After Prompt Edit creative workflow" class="h-full min-h-80 w-full object-cover opacity-90" />
           </div>
         </div>
       </div>
@@ -499,7 +691,7 @@ const faqs = [
           <p class="max-w-md text-sm leading-6 text-zinc-600">The template library becomes a concise bonus section instead of taking over the full sales page.</p>
         </div>
 
-        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <article v-for="pack in templatePacks" :key="pack.title" class="overflow-hidden rounded-lg border border-zinc-200 bg-white">
             <img :src="pack.image" :alt="pack.title" class="h-44 w-full object-cover" />
             <div class="p-4">
@@ -507,6 +699,54 @@ const faqs = [
               <p class="mt-2 text-sm leading-6 text-zinc-600">{{ pack.description }}</p>
             </div>
           </article>
+        </div>
+
+        <div class="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <article v-for="item in templateDeepDives" :key="item.title" class="rounded-lg border border-zinc-200 bg-white p-5">
+            <h3 class="text-lg font-semibold">{{ item.title }}</h3>
+            <p class="mt-3 text-sm leading-6 text-zinc-600">{{ item.body }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <article v-for="testimonial in testimonials" :key="testimonial.name" class="rounded-lg border border-white/10 bg-zinc-950 p-6">
+          <p class="text-lg leading-8 text-white">"{{ testimonial.quote }}"</p>
+          <div class="mt-6 border-t border-white/10 pt-4">
+            <p class="font-semibold text-white">{{ testimonial.name }}</p>
+            <p class="mt-1 text-sm text-zinc-500">{{ testimonial.role }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="bg-white py-20 text-black">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-10 lg:grid-cols-[1fr_1fr]">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Who should subscribe</p>
+            <h2 class="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
+              Creator Plus is for people who want credits, speed, and a full editing asset library.
+            </h2>
+            <div class="mt-8 space-y-3">
+              <div v-for="item in subscriptionFit" :key="item" class="flex gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
+                <BadgeCheck class="mt-0.5 size-5 shrink-0 text-black" aria-hidden="true" />
+                <span>{{ item }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-lg bg-black p-6 text-white">
+            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-lime-300">Unlimited downloads and usage</p>
+            <h3 class="mt-3 text-3xl font-semibold leading-tight">The library is designed to remove asset friction.</h3>
+            <div class="mt-8 grid gap-3">
+              <div v-for="item in unlimitedBenefits" :key="item" class="rounded-lg border border-white/10 bg-white/[0.05] p-4 text-sm leading-6 text-zinc-300">
+                {{ item }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -537,6 +777,33 @@ const faqs = [
       </div>
     </section>
 
+    <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div class="grid gap-8 rounded-lg border border-white/10 bg-white p-6 text-black sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Ready for submission</p>
+          <h2 class="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">A mobile-ready sales page built straight in Tailwind.</h2>
+          <p class="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
+            This static Vercel build mirrors the Laravel/Inertia version and includes the reference page offer, tool categories, pricing, template library, FAQ, and guarantee topics.
+          </p>
+        </div>
+        <a href="#pricing" class="inline-flex items-center justify-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition hover:bg-zinc-800">
+          Claim the offer
+          <ArrowRight class="size-4" aria-hidden="true" />
+        </a>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+      <div class="rounded-lg border border-white/10 bg-zinc-950 p-6">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Guarantee and important notes</p>
+        <div class="mt-5 grid gap-4 md:grid-cols-3">
+          <div v-for="note in legalNotes" :key="note" class="rounded-lg border border-white/10 bg-black p-4 text-sm leading-6 text-zinc-400">
+            {{ note }}
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="border-t border-white/10 px-4 py-8 text-center text-sm text-zinc-500 sm:px-6 lg:px-8">
       <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
         <p>Prompt Edit sales page redesign concept.</p>
@@ -545,6 +812,9 @@ const faqs = [
           <span>Vercel deployable Vue, TypeScript, and Tailwind build.</span>
         </div>
       </div>
+      <p class="mx-auto mt-6 max-w-5xl text-xs leading-5 text-zinc-600">
+        Production pages should include the original business terms, privacy policy, earnings disclaimer, and platform notices. This redesign uses rewritten copy and preserves the offer structure, content categories, pricing, guarantee, and FAQ topics from the reference page.
+      </p>
     </footer>
   </main>
 </template>
